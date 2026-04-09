@@ -44,15 +44,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 1. Genera un tag versione basato sulla data (es: 2024.05.21-nightly)
-          # Il formato è Anno.Mese.Giorno per mantenere l'ordine cronologico
-          VERSION_TAG=$(date +'%Y.%m.%d')-nightly
+          # 1. Genera il nome versione (stringa)
+          VERSION_NAME=$(date +'%Y.%m.%d')-nightly
           
-          # 2. Lanciamo lo script ufficiale di Nuvio
-          # --publish: carica i file nelle Release di GitHub
-          # --version: obbligatorio, passiamo il tag appena creato
-          # --extra-notes: aggiunge il testo alla descrizione della release
+          # 2. Genera il codice versione (intero obbligatorio per Android)
+          # Usiamo il numero della run di GitHub che è sempre crescente
+          VERSION_CODE=${{ github.run_number }}
+          
+          # 3. Lanciamo lo script
+          # Nota: VERSION_NAME va alla fine senza flag, è un argomento posizionale
           python3 scripts/release_beta.py \
             --publish \
-            --version "$VERSION_TAG" \
-            --extra-notes "🛠 **Nightly Build** generata automaticamente dal fork."
+            --version-code "$VERSION_CODE" \
+            --extra-notes "🛠 **Nightly Build** generata automaticamente dal fork." \
+            "$VERSION_NAME"
