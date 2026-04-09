@@ -1,0 +1,49 @@
+name: Nightly Build Auto
+
+on:
+  schedule:
+    # Esegue ogni giorno alle 3:00 AM (UTC)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Permette di avviarlo anche a mano con un click
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nightly-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Configura Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Configura l'identità Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Imposta la firma di Debug
+        # Dato che sei su un fork, usiamo la firma di debug predefinita
+        run: echo "CI_USE_DEBUG_SIGNING=true" >> "$GITHUB_ENV"
+
+      - name: Compila e Pubblica la Nightly
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Lanciamo lo script ufficiale di Nuvio dicendogli di pubblicare (--publish)
+          # Aggiungiamo un extra note per chiarire che è una nightly generata dal tuo fork
+          python3 scripts/release_beta.py --publish --extra-notes "🛠 **Nightly Build** generata automaticamente dal fork."
