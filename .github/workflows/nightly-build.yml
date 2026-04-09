@@ -4,7 +4,7 @@ on:
   schedule:
     # Esegue ogni giorno alle 3:00 AM (UTC)
     - cron: '0 3 * * *'
-  workflow_dispatch: # Permette di avviarlo anche a mano con un click
+  workflow_dispatch: # Permette di avviarlo manualmente con un click
 
 permissions:
   contents: write
@@ -37,13 +37,22 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Imposta la firma di Debug
-        # Dato che sei su un fork, usiamo la firma di debug predefinita
+        # Specifichiamo di usare la firma di debug predefinita di Android
         run: echo "CI_USE_DEBUG_SIGNING=true" >> "$GITHUB_ENV"
 
       - name: Compila e Pubblica la Nightly
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Lanciamo lo script ufficiale di Nuvio dicendogli di pubblicare (--publish)
-          # Aggiungiamo un extra note per chiarire che è una nightly generata dal tuo fork
-          python3 scripts/release_beta.py --publish --extra-notes "🛠 **Nightly Build** generata automaticamente dal fork."
+          # 1. Genera un tag versione basato sulla data (es: 2024.05.21-nightly)
+          # Il formato è Anno.Mese.Giorno per mantenere l'ordine cronologico
+          VERSION_TAG=$(date +'%Y.%m.%d')-nightly
+          
+          # 2. Lanciamo lo script ufficiale di Nuvio
+          # --publish: carica i file nelle Release di GitHub
+          # --version: obbligatorio, passiamo il tag appena creato
+          # --extra-notes: aggiunge il testo alla descrizione della release
+          python3 scripts/release_beta.py \
+            --publish \
+            --version "$VERSION_TAG" \
+            --extra-notes "🛠 **Nightly Build** generata automaticamente dal fork."
